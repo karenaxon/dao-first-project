@@ -4,10 +4,10 @@ My first decentralized autonomous organization(DAO). An application where skier 
 #### By Karen Axon
 
 <p align="center">
-  <img src="./src/images/collage1.png" height="382px">
+  <img src="./src/images/collage1.png" height="500px">
 </p>
 <p align="center">
-  <img src="./src/images/governance.jpg" height="382px">
+  <img src="./src/images/governance.jpg" height="500px">
 </p>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png)
