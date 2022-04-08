@@ -106,6 +106,13 @@ h1 {
   text-align: center;
 }
 
+.member-page img {
+  width: 30rem;
+  height: auto;
+  align-self: center;
+  
+}
+
 .card {
   background-color: #fff;
   padding: 1rem;
@@ -141,3 +148,4 @@ button:disabled {
   opacity: 0.8;
   pointer-events: none;
 }
+
