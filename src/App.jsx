@@ -1,31 +1,178 @@
-import { useAddress, useMetamask } from '@thirdweb-dev/react';
-import logo from './images/icon.png';
+import { useAddress, useMetamask, useEditionDrop, useToken } from '@thirdweb-dev/react';
+import { useState, useEffect, useMemo } from 'react';
+import logo from './images/logo.png';
+import memberLogo from './images/ribbon.png';
 
 const App = () => {
-  //Use the hooks thirdweb give us
+  // Use the hooks thirdweb give us.
   const address = useAddress();
   const connectWithMetamask = useMetamask();
-  console.log('Address: ', address);
+  console.log("👋 Address:", address);
 
-  //If user hasn't connected wallet to web app yet
-  if(!address){
-    return(
-      <div className='landing'>
-        <div >
-          <img src={ logo } alt="logo" />
+  // Initialize our editionDrop contract
+  const editionDrop = useEditionDrop("0x51581489ec63fB7578D5570958CfA25D45245DBD");
+
+  // Initialize our token contract
+  const token = useToken("0x0BB1605aC7EB6AeD3772aaf4b083Df74Ed8b9b0c");
+
+  // State variable for us to know if user has our NFT.
+  const [hasClaimedNFT, setHasClaimedNFT] = useState(false);
+
+  // isClaiming lets us easily keep a loading state while the NFT is minting.
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  // Holds the # of tokens each member has
+  const [memberTokenAmounts, setMemberTokenAmounts] = useState([]);
+
+  // The array holding all of the members' addresses
+  const [memberAddresses, setMemberAddresses] = useState([]);
+
+  // This function is used to shorten addressses
+  const shortenAddress = (str) => {
+    return str.substring(0, 6) + "..." + str.substring(str.length - 4);
+  }
+
+  useEffect(() => {
+    if(!hasClaimedNFT) {
+      return;
+    }
+  
+    // this grabs all the addresses of the members with the NFT
+    const getAllAddresses = async () => {
+      try{
+
+      }catch (error) {
+        console.log("Failed to get member list", error);
+      }
+    };
+    getAllAddresses();
+  }, [hasClaimedNFT, token.history]);
+
+  // Combine member addresses and member token amounts into a single array
+  const memberList = useMemo(() => {
+    return memberAddresses.map((address) => {
+      // if memberTokenAmount array contains the address, return the amount that the user has. Otherwise return 0
+
+      const member = memberTokenAmounts?.find(({ holder }) => holder === address);
+
+      return {
+        address,
+        tokenAmount: member?.balance.displayValue || "0",
+      }
+    });
+  }, [memberAddresses, memberTokenAmounts]);
+
+  useEffect(() => {
+    // If they don't have a connected wallet, exit!
+    if (!address) {
+      return;
+    }
+
+    const checkBalance = async () => {
+      try {
+        const balance = await editionDrop.balanceOf(address, 0);
+        if (balance.gt(0)) {
+          setHasClaimedNFT(true);
+          console.log("🌟 this user has a membership NFT!");
+        } else {
+          setHasClaimedNFT(false);
+          console.log("😭 this user doesn't have a membership NFT.");
+        }
+      } catch (error) {
+        setHasClaimedNFT(false);
+        console.error("Failed to get balance", error);
+      }
+    };
+    checkBalance();
+  }, [address, editionDrop]);
+
+  if (!address) {
+    return (
+      <div className="landing">
+        <div>
+          <img src={ logo } alt="logo"/>
         </div>
         <h1>Welcome to SnowDAO</h1>
-        <button onClick={connectWithMetamask} className='btn-hero'>🔗 Connect your wallet
+        <button onClick={connectWithMetamask} className="btn-hero">
+          Connect your wallet
         </button>
       </div>
     );
   }
-  //If we have the user's address(they connected their wallet already)
+  
+  // Add this little piece!
+  if (hasClaimedNFT) {
+    return (
+      <div className="member-page">
+        <img src={ memberLogo } alt="logo"/>
+        <h1>Member Page</h1>
+        <p>Congratulations on being a member</p>
+        <div>
+          <div>
+            <h2>Member List</h2>
+            <table className='card'>
+              <thead>
+                <tr>
+                  <th>Address</th>
+                  <th>Token Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memberList.map((member) => {
+                  return(
+                    <tr key={member.address}>
+                      <td>{shortenAddress(member.address)}</td>
+                      <td>{member.tokenAmount}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const mintNft = async () => {
+    try {
+      setIsClaiming(true);
+      await editionDrop.claim("0", 1);
+      console.log(`🌊 Successfully Minted! Check it out on OpenSea: https://testnets.opensea.io/assets/${editionDrop.getAddress()}/0`);
+      setHasClaimedNFT(true);
+    } catch (error) {
+      setHasClaimedNFT(false);
+      console.error("Failed to mint NFT", error);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  // This is the case where the user hasn't connected their wallet
+  // to your web app. Let them call connectWallet.
+  if (!address) {
+    return (
+      <div className="landing">
+        <h1>Welcome to SnowDAO</h1>
+        <button onClick={connectWithMetamask} className="btn-hero">
+          Connect your wallet
+        </button>
+      </div>
+    );
+  }
+
+  // Render mint nft screen.
   return (
-    <div className="landing">
-      <h1>👍🏽 Wallet connected! Now what?</h1>
+    <div className="mint-nft">
+      <h1>Mint your free SnowDAO Membership NFT</h1>
+      <button
+        disabled={isClaiming}
+        onClick={mintNft}
+      >
+        {isClaiming ? "Minting..." : "Mint your nft (FREE)"}
+      </button>
     </div>
   );
-};
+}
 
 export default App;
